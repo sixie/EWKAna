@@ -1,0 +1,52 @@
+
+# DO NOT DELETE
+
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TCanvas.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TPad.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TVirtualPad.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttPad.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/Rtypes.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/RConfig.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/RVersion.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/DllImport.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/Rtypeinfo.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/snprintf.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/strlcpy.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TGenericClassInfo.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TSchemaHelper.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TVirtualX.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TNamed.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TObject.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TStorage.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TVersionCheck.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/Riosfwd.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TBuffer.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TString.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TRefCnt.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TMathBase.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttLine.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttFill.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttText.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttMarker.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/GuiTypes.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/Buttons.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TQObject.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttCanvas.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TCanvasImp.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TH1.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAxis.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TAttAxis.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArrayD.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArray.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArrayC.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArrayS.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArrayI.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TArrayF.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/Foption.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TVectorFfwd.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TVectorDfwd.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TFitResultPtr.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/TStyle.h
+./MitStyle_C.so: /data/blue/sixie/releases/analysis/CMSSW_4_2_3_patch2/src/EWKAna/Thesis/Systematics/MitStyle.h
+./MitStyle_C.so: /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/cintdictversion.h /afs/cern.ch/cms/slc5_amd64_gcc434/lcg/root/5.27.06b-cms16/include/RVersion.h
+MitStyle_C__ROOTBUILDVERSION= 5.27/06b

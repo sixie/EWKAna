@@ -1,0 +1,1326 @@
+//root -l EWKAna/Hww/FakeRate/ComputeElectronFakeRate_Reference.C+\(\)
+//================================================================================================
+//
+// HWW selection macro
+//
+//  * plots distributions associated with selected events
+//  * prints list of selected events from data
+//  * outputs ROOT files of events passing selection for each sample, 
+//    which can be processed by plotSelect.C
+//
+//________________________________________________________________________________________________
+
+#if !defined(__CINT__) || defined(__MAKECINT__)
+#include <TROOT.h>                  // access to gROOT, entry point to ROOT system
+#include <TSystem.h>                // interface to OS
+#include <TFile.h>                  // file handle class
+#include <TTree.h>                  // class to access ntuples
+#include <TBranch.h>                // class to access branches in TTree
+#include <TClonesArray.h>           // ROOT array class
+#include <TCanvas.h>                // class for drawing
+#include <TH1F.h>                   // 1D histograms
+#include <TH2F.h>                   // 2D histograms
+#include <TGraphAsymmErrors.h>     
+#include <TBenchmark.h>             // class to track macro running statistics
+#include <TLorentzVector.h>         // 4-vector class
+#include <TVector3.h>               // 3D vector class
+#include <vector>                   // STL vector class
+#include <iostream>                 // standard I/O
+#include <iomanip>                  // functions to format standard I/O
+#include <fstream>                  // functions for file I/O
+#include <string>                   // C++ string class
+#include <sstream>                  // class for parsing strings
+#include <MitStyle.h>
+
+// define structures to read in ntuple
+#include "EWKAna/Ntupler/interface/EWKAnaDefs.hh"
+#include "EWKAna/Ntupler/interface/TEventInfo.hh"
+#include "EWKAna/Ntupler/interface/TElectron.hh"
+#include "EWKAna/Ntupler/interface/TMuon.hh"
+#include "EWKAna/Ntupler/interface/TJet.hh"
+
+// lumi section selection with JSON files
+#include "MitCommon/DataFormats/interface/Types.h"
+#include "MitAna/DataCont/interface/RunLumiRangeMap.h"
+#include "MitCommon/MathTools/interface/MathUtils.h"
+#include "MitCommon/DataFormats/interface/TH2DAsymErr.h"
+#include "MitHiggs/Utils/interface/EfficiencyUtils.h"
+#include "MitHiggs/Utils/interface/PlotUtils.h"
+
+#endif
+
+
+//=== FUNCTION DECLARATIONS ======================================================================================
+
+
+
+// print event dump
+Bool_t passHLT(UInt_t triggerBits, Int_t runNum, Int_t SelectionType);
+Bool_t passElectronNumeratorCuts(const mithep::TElectron *ele, Int_t ElectronSelectionType);
+Bool_t passElectronNMinusOneCuts(const mithep::TElectron *ele, Int_t varIndex);
+Bool_t passElectronDenominatorCuts(const mithep::TElectron *ele, Int_t SelectionType);
+void eventDump(ofstream &ofs, const Int_t runNum, const Int_t lumiSec, const Int_t evtNum, Double_t mass,
+               Double_t pt1, Double_t eta1, Double_t phi1, Int_t leptonCharge1, Double_t pt2, Double_t eta2, Double_t phi2, Int_t leptonCharge2);
+void DoComputeElectronFakeRate(const string inputFilename,
+                               const string label, 
+                               const string outputFilename, 
+                               Int_t SelectionType, Int_t ElectronSelectionType);
+
+//------------------------------------------------------------------------------
+// getTreeFromFile
+//------------------------------------------------------------------------------
+TTree* getTreeFromFile(const char* infname, const char* tname)
+{
+  bool verbose = false;
+
+  if (verbose) {
+    cout << "--- Open file " << infname << endl;
+  }
+  
+  TFile* inf = new TFile(infname,"read");
+  assert(inf);
+
+  TTree* t = (TTree*)inf->Get(tname);
+  
+  if (!t) {
+    TDirectory *dir = (TDirectory*)inf->FindObjectAny("HwwNtuplerMod");
+    if (!dir) {
+      cout << "Cannot get Directory HwwNtuplerMod from file " << infname << endl;
+      assert(dir);
+    }
+    t = (TTree*)dir->Get(tname);
+  }
+
+  if (!t) {
+    cout << "Cannot get Tree with name " << tname << " from file " << infname << endl;
+  }
+  assert(t);
+
+
+  if (verbose) {
+    cout << "---\tRecovered tree " << t->GetName()
+	 << " with "<< t->GetEntries() << " entries" << endl;
+  }
+  
+  return t;
+}
+
+
+//=== MAIN MACRO =================================================================================================
+void ComputeElectronFakeRate_Reference() {
+
+
+//     DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_v4_Ele10Jet30","ElectronFakeRate_V4.root",2);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_egcombined.root","ElectronFakeRate_elecombined_v4_Ele10Jet30","ElectronFakeRate_V4.root",2);
+
+//  DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4_Jet30","ElectronFakeRate_V4.root",102, 0);
+//  DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-truncatedIso_Jet30","ElectronFakeRate_V4.root",102, 1);
+//  DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-exponentialIso_Jet30","ElectronFakeRate_V4.root",102, 2);
+//  DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-exponentialIsoTight2_Jet30","ElectronFakeRate_V4.root",102, 3);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-exponentialIsoTight3_Jet30","ElectronFakeRate_V4.root",102, 4);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-exponentialIsoWP70_Jet30","ElectronFakeRate_V4.root",102, 21);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-exponentialIsoWP60_Jet30","ElectronFakeRate_V4.root",102, 22);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-giuseppeCut1a_Jet30","ElectronFakeRate_V4.root",102, 201);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-giuseppeCut1b_Jet30","ElectronFakeRate_V4.root",102, 202);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-giuseppeCut4_Jet30","ElectronFakeRate_V4.root",102, 204);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-CiCSuperTight_Jet30","ElectronFakeRate_V4.root",102, 301);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/old/FakeRate_jetCombined.root","ElectronFakeRate_jetcombined_v4-2009WWTight_Jet30","ElectronFakeRate_V4.root",102, 302);
+
+
+
+
+
+
+
+
+
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_v4_Ele10Jet15","ElectronFakeRate_V4.root",1);
+//    DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_HLTNoTrackerToVBTF90Loose_Ele10Jet30","ElectronFakeRate_V4.root",2);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_v4_Ele10Jet50","ElectronFakeRate_V4.root",3);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_v4_Ele10Jet70","ElectronFakeRate_V4.root",4);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_EG_v4_Ele10Jet100","ElectronFakeRate_V4.root",5);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-egmo-pr-v2_noskim.root","ElectronFakeRate_EGMon_v4_Ele10Jet15","ElectronFakeRate_V4.root",1);
+
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jmt-s17_noskim.root","ElectronFakeRate_r10ajmt_v4_Jet15","ElectronFakeRate_V4.root",101);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jm-s17_noskim.root","ElectronFakeRate_r10ajm_v4_Jet15","ElectronFakeRate_V4.root",101);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jmt-pr-v2_noskim.root","ElectronFakeRate_r10bjmt_v4_Jet15","ElectronFakeRate_V4.root",101);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jet-pr-v2_noskim.root","ElectronFakeRate_r10bjet_v4_Jet15","ElectronFakeRate_V4.root",101);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jmt-s17_noskim.root","ElectronFakeRate_r10ajmt_v4_Jet30","ElectronFakeRate_V4.root",102);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jm-s17_noskim.root","ElectronFakeRate_r10ajm_v4_Jet30","ElectronFakeRate_V4.root",102);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jmt-pr-v2_noskim.root","ElectronFakeRate_r10bjmt_v4_Jet30","ElectronFakeRate_V4.root",102);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jet-pr-v2_noskim.root","ElectronFakeRate_r10bjet_v4_Jet30","ElectronFakeRate_V4.root",102);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jmt-s17_noskim.root","ElectronFakeRate_r10ajmt_v4_Jet50","ElectronFakeRate_V4.root",103);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jm-s17_noskim.root","ElectronFakeRate_r10ajm_v4_Jet50","ElectronFakeRate_V4.root",103);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jmt-pr-v2_noskim.root","ElectronFakeRate_r10bjmt_v4_Jet50","ElectronFakeRate_V4.root",103);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jet-pr-v2_noskim.root","ElectronFakeRate_r10bjet_v4_Jet50","ElectronFakeRate_V4.root",103);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jmt-s17_noskim.root","ElectronFakeRate_r10ajmt_v4_Jet70","ElectronFakeRate_V4.root",104);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jm-s17_noskim.root","ElectronFakeRate_r10ajm_v4_Jet70","ElectronFakeRate_V4.root",104);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jmt-pr-v2_noskim.root","ElectronFakeRate_r10bjmt_v4_Jet70","ElectronFakeRate_V4.root",104);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jet-pr-v2_noskim.root","ElectronFakeRate_r10bjet_v4_Jet70","ElectronFakeRate_V4.root",104);
+
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jmt-s17_noskim.root","ElectronFakeRate_r10ajmt_v4_Jet100","ElectronFakeRate_V4.root",105);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-jm-s17_noskim.root","ElectronFakeRate_r10ajm_v4_Jet100","ElectronFakeRate_V4.root",105);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jmt-pr-v2_noskim.root","ElectronFakeRate_r10bjmt_v4_Jet100","ElectronFakeRate_V4.root",105);
+//   DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10b-jet-pr-v2_noskim.root","ElectronFakeRate_r10bjet_v4_Jet100","ElectronFakeRate_V4.root",105);
+
+// DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_r10aeg_v4_Photon20","ElectronFakeRate_V4.root",201);
+//    DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_r10aeg_v4_Photon30","ElectronFakeRate_V4.root",202);
+// DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_r10aeg_v4_Photon40","ElectronFakeRate_V4.root",203);
+// DoComputeElectronFakeRate("/home/sixie/hist/FakeRate/cern/filefi/015/FakeRate_r10a-eg-s17_noskim.root","ElectronFakeRate_r10aeg_v4_Photon50","ElectronFakeRate_V4.root",204);
+
+
+
+}
+
+
+
+void DoComputeElectronFakeRate(const string inputFilename,
+                               const string label, 
+                               const string outputFilename, 
+                               Int_t SelectionType, Int_t ElectronSelectionType) 
+{  
+  gBenchmark->Start("WWTemplate");
+
+
+  //*****************************************************************************************
+  //Setup
+  //*****************************************************************************************
+  Double_t jetPtThreshold = 0;
+  if (SelectionType == 1) {
+    jetPtThreshold = 15.0;
+  } else if (SelectionType == 2) {
+    jetPtThreshold = 30.0;
+  }else if (SelectionType == 3) {
+    jetPtThreshold = 50.0;
+  }else if (SelectionType == 4) {
+    jetPtThreshold = 70.0;
+  }else if (SelectionType == 5) {
+    jetPtThreshold = 100.0;
+  }
+
+
+  //*****************************************************************************************
+  //Define Pt bins
+  //*****************************************************************************************
+  vector<double> ptbins;
+  ptbins.push_back(10);  
+  ptbins.push_back(12.5);  
+  ptbins.push_back(15);  
+  ptbins.push_back(20);  
+  ptbins.push_back(25);  
+  ptbins.push_back(30);  
+  ptbins.push_back(35);  
+  ptbins.push_back(40);  
+  ptbins.push_back(50);  
+  ptbins.push_back(80);  
+
+
+  vector<double> etabins;
+  etabins.push_back(-2.75);
+  etabins.push_back(-2.25);
+  etabins.push_back(-1.75);
+  etabins.push_back(-1.25);
+  etabins.push_back(-0.75);
+  etabins.push_back(-0.25);
+  etabins.push_back(0.25);
+  etabins.push_back(0.75);
+  etabins.push_back(1.25);
+  etabins.push_back(1.75);
+  etabins.push_back(2.25);
+  etabins.push_back(2.75);
+
+  vector<double> phibins;
+  phibins.push_back(-3.25);
+  phibins.push_back(-2.75);
+  phibins.push_back(-2.25);
+  phibins.push_back(-1.75);
+  phibins.push_back(-1.25);
+  phibins.push_back(-0.75);
+  phibins.push_back(-0.25);
+  phibins.push_back(0.25);
+  phibins.push_back(0.75);
+  phibins.push_back(1.25);
+  phibins.push_back(1.75);
+  phibins.push_back(2.25);
+  phibins.push_back(2.75);
+  phibins.push_back(3.25);
+
+
+  //--------------------------------------------------------------------------------------------------------------
+  // Histograms
+  //==============================================================================================================  
+  TH1F *leadingJetPt = new TH1F("leadingJetPt" , "; p_{T} [GeV/c] ; Number of Events ",  200, 0 , 200);
+
+  TH1F *denominator_Pt = new TH1F("denominator_Pt" , "; p_{T} [GeV/c] ; Number of Events ",  100, 0 , 100);
+  TH1F *denominator_Eta = new TH1F("denominator_Eta" , "; #eta ; Number of Events ",  100, -3.0 , 3.0);
+  TH1F *denominator_Phi = new TH1F("denominator_Phi" , "; #phi ; Number of Events ",  100, -3.2 , 3.2);
+  TH2F *denominator_PtEta = new TH2F("denominator_PtEta" , "; p_{T} [GeV/c] ; #eta ; Number of Events ",  100, 0 , 100, 100, -3.5, 3.5);
+
+  TH1F *numerator_Pt = new TH1F("numerator_Pt" , "; p_{T} [GeV/c] ; Number of Events ",  100, 0 , 100);
+  TH1F *numerator_Eta = new TH1F("numerator_Eta" , "; #eta ; Number of Events ",  100, -3.0 , 3.0);
+  TH1F *numerator_Phi = new TH1F("numerator_Phi" , "; #phi ; Number of Events ",  100, -3.2 , 3.2);
+  TH2F *numerator_PtEta = new TH2F("numerator_PtEta" , "; p_{T} [GeV/c] ; #eta ; Number of Events ",  100, 0 , 100, 100, -3.5, 3.5);
+
+
+  //N-1 histograms
+  string tmplabel = label; if (tmplabel != "") tmplabel = "_"+label;
+
+  TH1F *sigmaIEtaIEta_Barrel = new TH1F((string("sigmaIEtaIEta_Barrel")+tmplabel).c_str(), "; sigma ieta ieta; Fraction of Events ", 25, 0, 0.05);
+  TH1F *DeltaEta_Barrel = new TH1F((string("DeltaEta_Barrel")+tmplabel).c_str(), "; deltaEta; Fraction of Events ", 25, -0.02, 0.02);
+  TH1F *DeltaPhi_Barrel = new TH1F((string("DeltaPhi_Barrel")+tmplabel).c_str(), "; deltaPhi; Fraction of Events ", 25, -0.5, 0.5);
+  TH1F *HOverE_Barrel = new TH1F((string("HOverE_Barrel")+tmplabel).c_str(), "; HOverE; Fraction of Events ", 25, 0, 2.0);
+  TH1F *relIso_Barrel = new TH1F((string("relIso_Barrel")+tmplabel).c_str(), "; relIso; Fraction of Events ", 25, 0, 1.0);
+  TH1F *NExpectedHits_Barrel = new TH1F((string("NExpectedHits_Barrel")+tmplabel).c_str(), "; NExpectedHits; Fraction of Events ", 25, 0, 1.0);
+  TH1F *d0_Barrel = new TH1F((string("d0_Barrel")+tmplabel).c_str(), "; d0; Fraction of Events ", 25, 0, 0.05);
+  TH1F *sigmaIEtaIEta_Endcap = new TH1F((string("sigmaIEtaIEta_Endcap")+tmplabel).c_str(), "; sigma ieta ieta; Fraction of Events ", 25, 0, 0.1);
+  TH1F *DeltaEta_Endcap = new TH1F((string("DeltaEta_Endcap")+tmplabel).c_str(), "; deltaEta; Fraction of Events ", 25, -0.02, 0.02);
+  TH1F *DeltaPhi_Endcap = new TH1F((string("DeltaPhi_Endcap")+tmplabel).c_str(), "; deltaPhi; Fraction of Events ", 25, -0.5, 0.5);
+  TH1F *HOverE_Endcap = new TH1F((string("HOverE_Endcap")+tmplabel).c_str(), "; HOverE; Fraction of Events ", 25, 0, 2.0);
+  TH1F *relIso_Endcap = new TH1F((string("relIso_Endcap")+tmplabel).c_str(), "; relIso; Fraction of Events ", 25, 0, 1.0);
+  TH1F *NExpectedHits_Endcap = new TH1F((string("NExpectedHits_Endcap")+tmplabel).c_str(), "; NExpectedHits; Fraction of Events ", 25, 0, 1.0);
+  TH1F *d0_Endcap = new TH1F((string("d0_Endcap")+tmplabel).c_str(), "; d0; Fraction of Events ", 25, 0, 0.05);
+
+  TH1F *sigmaIEtaIEta_Barrel_NMinusOne = new TH1F((string("sigmaIEtaIEta_Barrel_NMinusOne")+tmplabel).c_str(), "; sigma ieta ieta; Fraction of Events ", 25, 0, 0.05);
+  TH1F *DeltaEta_Barrel_NMinusOne = new TH1F((string("DeltaEta_Barrel_NMinusOne")+tmplabel).c_str(), "; deltaEta; Fraction of Events ", 25, -0.02, 0.02);
+  TH1F *DeltaPhi_Barrel_NMinusOne = new TH1F((string("DeltaPhi_Barrel_NMinusOne")+tmplabel).c_str(), "; deltaPhi; Fraction of Events ", 25, -0.5, 0.5);
+  TH1F *HOverE_Barrel_NMinusOne = new TH1F((string("HOverE_Barrel_NMinusOne")+tmplabel).c_str(), "; HOverE; Fraction of Events ", 25, 0, 2.0);
+  TH1F *relIso_Barrel_NMinusOne = new TH1F((string("relIso_Barrel_NMinusOne")+tmplabel).c_str(), "; relIso; Fraction of Events ", 25, 0, 1.0);
+  TH1F *NExpectedHits_Barrel_NMinusOne = new TH1F((string("NExpectedHits_Barrel_NMinusOne")+tmplabel).c_str(), "; NExpectedHits; Fraction of Events ", 25, 0, 1.0);
+  TH1F *d0_Barrel_NMinusOne = new TH1F((string("d0_Barrel_NMinusOne")+tmplabel).c_str(), "; d0; Fraction of Events ", 25, 0, 0.05);
+  TH1F *sigmaIEtaIEta_Endcap_NMinusOne = new TH1F((string("sigmaIEtaIEta_Endcap_NMinusOne")+tmplabel).c_str(), "; sigma ieta ieta; Fraction of Events ", 25, 0, 0.1);
+  TH1F *DeltaEta_Endcap_NMinusOne = new TH1F((string("DeltaEta_Endcap_NMinusOne")+tmplabel).c_str(), "; deltaEta; Fraction of Events ", 25, -0.02, 0.02);
+  TH1F *DeltaPhi_Endcap_NMinusOne = new TH1F((string("DeltaPhi_Endcap_NMinusOne")+tmplabel).c_str(), "; deltaPhi; Fraction of Events ", 25, -0.5, 0.5);
+  TH1F *HOverE_Endcap_NMinusOne = new TH1F((string("HOverE_Endcap_NMinusOne")+tmplabel).c_str(), "; HOverE; Fraction of Events ", 25, 0, 2.0);
+  TH1F *relIso_Endcap_NMinusOne = new TH1F((string("relIso_Endcap_NMinusOne")+tmplabel).c_str(), "; relIso; Fraction of Events ", 25, 0, 1.0);
+  TH1F *NExpectedHits_Endcap_NMinusOne = new TH1F((string("NExpectedHits_Endcap_NMinusOne")+tmplabel).c_str(), "; NExpectedHits; Fraction of Events ", 25, 0, 1.0);
+  TH1F *d0_Endcap_NMinusOne = new TH1F((string("d0_Endcap_NMinusOne")+tmplabel).c_str(), "; d0; Fraction of Events ", 25, 0, 0.05);
+
+
+
+  ofstream eventListFile("eventList.txt");
+
+  //--------------------------------------------------------------------------------------------------------------
+  // Main analysis code 
+  //==============================================================================================================  
+  
+  //
+  // Access samples and fill histograms
+  TTree *eventTree=0;  
+   
+  // Data structures to store info from TTrees
+  mithep::TEventInfo *info    = new mithep::TEventInfo();
+  TClonesArray *electronArr = new TClonesArray("mithep::TElectron");
+  TClonesArray *muonArr = new TClonesArray("mithep::TMuon");
+  TClonesArray *jetArr = new TClonesArray("mithep::TJet");
+  
+  //********************************************************
+  // Good RunLumi Selection
+  //********************************************************
+  Bool_t hasJSON = kTRUE;
+  mithep::RunLumiRangeMap rlrm;
+//   rlrm.AddJSONFile("Cert_TopOct22_Merged_135821-148058_allPVT.txt"); 
+   rlrm.AddJSONFile("merged_JsonReRecoSep17_JsonStreamExpressV2.txt"); 
+   hasJSON = kFALSE;
+
+  //********************************************************
+  // Get Tree
+  //********************************************************
+  eventTree = getTreeFromFile(inputFilename.c_str(),"Events"); 
+  TBranch *infoBr;
+  TBranch *electronBr;
+  TBranch *muonBr;
+  TBranch *jetBr;
+
+
+  //*****************************************************************************************
+  //Loop over Data Tree
+  //*****************************************************************************************
+  // Set branch address to structures that will store the info  
+  eventTree->SetBranchAddress("Info",       &info);      infoBr       = eventTree->GetBranch("Info");
+  eventTree->SetBranchAddress("Electron", &electronArr); electronBr = eventTree->GetBranch("Electron");
+  eventTree->SetBranchAddress("Muon", &muonArr);         muonBr = eventTree->GetBranch("Muon");
+  eventTree->SetBranchAddress("PFJet", &jetArr);         jetBr = eventTree->GetBranch("PFJet");
+
+  cout << "Total Events: " << eventTree->GetEntries() << endl;
+  for(UInt_t ientry=0; ientry<eventTree->GetEntries(); ientry++) {       	
+    infoBr->GetEntry(ientry);
+		
+    if (ientry % 100000 == 0) cout << "Event " << ientry << endl;
+
+    mithep::RunLumiRangeMap::RunLumiPairType rl(info->runNum, info->lumiSec);      
+    if(hasJSON && !rlrm.HasRunLumi(rl)) continue;  // not certified run? Skip to next event...
+     
+    //********************************************************
+    // Load the branches
+    //********************************************************
+    electronArr->Clear(); 
+    muonArr->Clear(); 
+    jetArr->Clear(); 
+    electronBr->GetEntry(ientry);
+    muonBr->GetEntry(ientry);
+    jetBr->GetEntry(ientry);
+
+
+    //********************************************************
+    // TcMet
+    //********************************************************
+    TVector3 met;        
+    if(info->tcMEx!=0 || info->tcMEy!=0) {       
+      met.SetXYZ(info->tcMEx, info->tcMEy, 0);
+    }
+	
+    //********************************************************
+    // Event Selection Cuts
+    //********************************************************
+    if (met.Pt() > 20) continue;
+    if (electronArr->GetEntries() > 1) continue;
+
+    Double_t tempLeadingJetPt = 0;
+    for(Int_t i=0; i<jetArr->GetEntries(); i++) {
+      const mithep::TJet *jet = (mithep::TJet*)((*jetArr)[i]);
+      if( jet->pt > tempLeadingJetPt) tempLeadingJetPt = jet->pt;
+    }
+    leadingJetPt->Fill(tempLeadingJetPt);
+    
+ 
+
+    for(Int_t i=0; i<electronArr->GetEntries(); i++) {
+      const mithep::TElectron *ele = (mithep::TElectron*)((*electronArr)[i]);
+
+ //      if (ele->pt > 20) continue;
+
+      //pass HLT selection
+      if (!passHLT(info->triggerBits, info->runNum, SelectionType)) continue;
+      
+      //pass event selection
+      Bool_t passJetSelection = kFALSE;
+      for(Int_t i=0; i<jetArr->GetEntries(); i++) {
+        const mithep::TJet *jet = (mithep::TJet*)((*jetArr)[i]);
+        
+        if (jet->pt > jetPtThreshold &&
+            mithep::MathUtils::DeltaR(jet->phi, jet->eta, ele->phi, ele->eta) > 0.3) {
+          passJetSelection = kTRUE;
+          break;
+        }
+      }
+      if (!passJetSelection) continue;
+
+      if (!passElectronDenominatorCuts(ele, SelectionType)) continue;
+
+
+      //Fill Distributions
+      if (fabs(ele->eta) < 1.5) {
+        sigmaIEtaIEta_Barrel->Fill(ele->sigiEtaiEta);
+        DeltaEta_Barrel->Fill(ele->deltaEtaIn);
+        DeltaPhi_Barrel->Fill(ele->deltaPhiIn);
+        HOverE_Barrel->Fill(ele->HoverE);
+        relIso_Barrel->Fill((ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt);
+        NExpectedHits_Barrel->Fill(ele->nExpHitsInner);
+        d0_Barrel->Fill(ele->d0);   
+
+        if (passElectronNMinusOneCuts(ele, 0)) sigmaIEtaIEta_Barrel_NMinusOne->Fill(ele->sigiEtaiEta);
+        if (passElectronNMinusOneCuts(ele, 1)) DeltaEta_Barrel_NMinusOne->Fill(ele->deltaEtaIn);
+        if (passElectronNMinusOneCuts(ele, 2)) DeltaPhi_Barrel_NMinusOne->Fill(ele->deltaPhiIn);
+        if (passElectronNMinusOneCuts(ele, 3)) HOverE_Barrel_NMinusOne->Fill(ele->HoverE);
+        if (passElectronNMinusOneCuts(ele, 4)) relIso_Barrel_NMinusOne->Fill((ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt);
+        if (passElectronNMinusOneCuts(ele, 5)) NExpectedHits_Barrel_NMinusOne->Fill(ele->nExpHitsInner);
+        if (passElectronNMinusOneCuts(ele, 6)) d0_Barrel_NMinusOne->Fill(ele->d0);
+             
+      } else {
+        sigmaIEtaIEta_Endcap->Fill(ele->sigiEtaiEta);
+        DeltaEta_Endcap->Fill(ele->deltaEtaIn);
+        DeltaPhi_Endcap->Fill(ele->deltaPhiIn);
+        HOverE_Endcap->Fill(ele->HoverE);
+        relIso_Endcap->Fill((ele->trkIso03 + ele->emIso03 + ele->hadIso03) / ele->pt);
+        NExpectedHits_Endcap->Fill(ele->nExpHitsInner);
+        d0_Endcap->Fill(ele->d0);
+
+        if (passElectronNMinusOneCuts(ele, 0)) sigmaIEtaIEta_Endcap_NMinusOne->Fill(ele->sigiEtaiEta);
+        if (passElectronNMinusOneCuts(ele, 1)) DeltaEta_Endcap_NMinusOne->Fill(ele->deltaEtaIn);
+        if (passElectronNMinusOneCuts(ele, 2)) DeltaPhi_Endcap_NMinusOne->Fill(ele->deltaPhiIn);
+        if (passElectronNMinusOneCuts(ele, 3)) HOverE_Endcap_NMinusOne->Fill(ele->HoverE);
+        if (passElectronNMinusOneCuts(ele, 4)) relIso_Endcap_NMinusOne->Fill((ele->trkIso03 + ele->emIso03 + ele->hadIso03) / ele->pt);
+        if (passElectronNMinusOneCuts(ele, 5)) NExpectedHits_Endcap_NMinusOne->Fill(ele->nExpHitsInner);
+        if (passElectronNMinusOneCuts(ele, 6)) d0_Endcap_NMinusOne->Fill(ele->d0);
+      }
+
+      denominator_Pt->Fill(ele->pt);
+      denominator_Eta->Fill(ele->eta);
+      denominator_Phi->Fill(ele->phi);
+      denominator_PtEta->Fill(ele->pt, ele->eta);
+      if (passElectronNumeratorCuts(ele, ElectronSelectionType)) {
+        numerator_Pt->Fill(ele->pt);
+        numerator_Eta->Fill(ele->eta);
+        numerator_Phi->Fill(ele->phi);
+        numerator_PtEta->Fill(ele->pt, ele->eta );   
+      }           
+    }
+
+  } //end loop over data     
+
+
+  delete info;
+  delete electronArr;
+  delete muonArr;
+  delete jetArr;
+
+  
+  //*****************************************************************************************
+  // rate plots
+  //*****************************************************************************************
+  TH1F* IntegratedDenominatorRateVsPt = (TH1F*)denominator_Pt->Clone((string("IntegratedDenominatorRateVsPt")+"_"+label).c_str());
+  for (UInt_t k=1; k<IntegratedDenominatorRateVsPt->GetXaxis()->GetNbins()+2; ++k) {
+    IntegratedDenominatorRateVsPt->SetBinContent(k,denominator_Pt->Integral(k,denominator_Pt->GetXaxis()->GetNbins()+1) / denominator_Pt->Integral(1,denominator_Pt->GetXaxis()->GetNbins()+1));    
+  }
+  TH1F* IntegratedJetRateVsPt = (TH1F*)leadingJetPt->Clone((string("IntegratedJetRateVsPt")+"_"+label).c_str());
+  for (UInt_t k=1; k<IntegratedJetRateVsPt->GetXaxis()->GetNbins()+2; ++k) {
+    IntegratedJetRateVsPt->SetBinContent(k,leadingJetPt->Integral(k,leadingJetPt->GetXaxis()->GetNbins()+1) / leadingJetPt->Integral(1,leadingJetPt->GetXaxis()->GetNbins()+1));    
+  }
+
+
+  //*****************************************************************************************
+  //Make Efficiency Plots
+  //*****************************************************************************************
+  Int_t ErrorType = 2; //Clopper Pearson errors
+  TGraphAsymmErrors *efficiency_pt = mithep::EfficiencyUtils::createEfficiencyGraph(numerator_Pt, denominator_Pt, label+"_Pt", ptbins, ErrorType, -99, -99, 0, 1);
+  TGraphAsymmErrors *efficiency_eta = mithep::EfficiencyUtils::createEfficiencyGraph(numerator_Eta, denominator_Eta, label+"_Eta", etabins, ErrorType, -99, -99, 0, 1);
+  TGraphAsymmErrors *efficiency_phi = mithep::EfficiencyUtils::createEfficiencyGraph(numerator_Phi, denominator_Phi, label+"_Phi", phibins, ErrorType, -99, -99, 0, 1);
+  mithep::TH2DAsymErr *efficiency_PtEta = 
+    mithep::EfficiencyUtils::createEfficiencyHist2D(numerator_PtEta, 
+                                                    denominator_PtEta, label+"_PtEta", 
+                                                    ptbins, etabins, ErrorType);
+
+
+  //*****************************************************************************************
+  //Draw Plots
+  //*****************************************************************************************
+  TCanvas *cv = MakeCanvas("cv", "cv", 800, 600);
+  denominator_Pt->Draw();
+  cv->SaveAs((label+"_DenominatorPt.gif").c_str());
+  numerator_Pt->Draw();
+  cv->SaveAs((label+"_NumeratorPt.gif").c_str());
+  efficiency_pt->Draw("AP");
+  cv->SaveAs((label+"_FakeRatePt.gif").c_str());
+ 
+
+  //*****************************************************************************************
+  //Save Efficiency Plots
+  //*****************************************************************************************
+  TFile *file = new TFile(outputFilename.c_str(), "UPDATE");
+  file->cd();
+
+  file->WriteTObject(IntegratedDenominatorRateVsPt, IntegratedDenominatorRateVsPt->GetName(), "WriteDelete");
+  file->WriteTObject(IntegratedJetRateVsPt, IntegratedJetRateVsPt->GetName(), "WriteDelete");
+  file->WriteTObject(efficiency_pt, efficiency_pt->GetName(), "WriteDelete");
+  file->WriteTObject(efficiency_eta, efficiency_eta->GetName(), "WriteDelete");
+  file->WriteTObject(efficiency_phi, efficiency_phi->GetName(), "WriteDelete");
+  file->WriteTObject(efficiency_PtEta, efficiency_PtEta->GetName(), "WriteDelete");
+ 
+
+  //Normalize to 1
+  vector<TH1F*> hists;
+  hists.push_back(sigmaIEtaIEta_Barrel);
+  hists.push_back(DeltaEta_Barrel);
+  hists.push_back(DeltaPhi_Barrel);
+  hists.push_back(HOverE_Barrel);
+  hists.push_back(relIso_Barrel);
+  hists.push_back(NExpectedHits_Barrel);
+  hists.push_back(d0_Barrel);
+  hists.push_back(sigmaIEtaIEta_Barrel_NMinusOne);
+  hists.push_back(DeltaEta_Barrel_NMinusOne);
+  hists.push_back(DeltaPhi_Barrel_NMinusOne);
+  hists.push_back(HOverE_Barrel_NMinusOne);
+  hists.push_back(relIso_Barrel_NMinusOne);
+  hists.push_back(NExpectedHits_Barrel_NMinusOne);
+  hists.push_back(d0_Barrel_NMinusOne);
+  hists.push_back(sigmaIEtaIEta_Endcap);
+  hists.push_back(DeltaEta_Endcap);
+  hists.push_back(DeltaPhi_Endcap);
+  hists.push_back(HOverE_Endcap);
+  hists.push_back(relIso_Endcap);
+  hists.push_back(NExpectedHits_Endcap);
+  hists.push_back(d0_Endcap);
+  hists.push_back(sigmaIEtaIEta_Endcap_NMinusOne);
+  hists.push_back(DeltaEta_Endcap_NMinusOne);
+  hists.push_back(DeltaPhi_Endcap_NMinusOne);
+  hists.push_back(HOverE_Endcap_NMinusOne);
+  hists.push_back(relIso_Endcap_NMinusOne);
+  hists.push_back(NExpectedHits_Endcap_NMinusOne);
+  hists.push_back(d0_Endcap_NMinusOne);
+  for (int a=0;a<hists.size(); ++a) {
+    Double_t Norm = 0;
+    Norm = hists[a]->Integral();
+    for (int b=0; b < hists[a]->GetXaxis()->GetNbins()+2; ++b) {
+      hists[a]->SetBinContent(b, hists[a]->GetBinContent(b) / Norm);      
+      hists[a]->SetBinError(b, hists[a]->GetBinError(b) / Norm);
+    }
+  }
+
+  file->WriteTObject(sigmaIEtaIEta_Barrel, sigmaIEtaIEta_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaEta_Barrel, DeltaEta_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaPhi_Barrel, DeltaPhi_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(HOverE_Barrel, HOverE_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(relIso_Barrel, relIso_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(NExpectedHits_Barrel, NExpectedHits_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(d0_Barrel, d0_Barrel->GetName(), "WriteDelete");
+  file->WriteTObject(sigmaIEtaIEta_Barrel_NMinusOne, sigmaIEtaIEta_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaEta_Barrel_NMinusOne, DeltaEta_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaPhi_Barrel_NMinusOne, DeltaPhi_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(HOverE_Barrel_NMinusOne, HOverE_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(relIso_Barrel_NMinusOne, relIso_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(NExpectedHits_Barrel_NMinusOne, NExpectedHits_Barrel_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(d0_Barrel_NMinusOne, d0_Barrel_NMinusOne->GetName(), "WriteDelete");
+
+  file->WriteTObject(sigmaIEtaIEta_Endcap, sigmaIEtaIEta_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaEta_Endcap, DeltaEta_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaPhi_Endcap, DeltaPhi_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(HOverE_Endcap, HOverE_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(relIso_Endcap, relIso_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(NExpectedHits_Endcap, NExpectedHits_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(d0_Endcap, d0_Endcap->GetName(), "WriteDelete");
+  file->WriteTObject(sigmaIEtaIEta_Endcap_NMinusOne, sigmaIEtaIEta_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaEta_Endcap_NMinusOne, DeltaEta_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(DeltaPhi_Endcap_NMinusOne, DeltaPhi_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(HOverE_Endcap_NMinusOne, HOverE_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(relIso_Endcap_NMinusOne, relIso_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(NExpectedHits_Endcap_NMinusOne, NExpectedHits_Endcap_NMinusOne->GetName(), "WriteDelete");
+  file->WriteTObject(d0_Endcap_NMinusOne, d0_Endcap_NMinusOne->GetName(), "WriteDelete");
+
+  file->Close();
+  delete file;
+
+
+    
+  gBenchmark->Show("WWTemplate");       
+} 
+
+
+
+Bool_t passHLT(UInt_t triggerBits, Int_t runNum, Int_t SelectionType) {
+
+
+  Bool_t pass = kFALSE;
+
+  //it's electron data
+  if (SelectionType < 10) {
+    if ( (runNum <= 139980) ) {
+      if ( (triggerBits & kHLT_Ele10_SW_L1R) ) pass = kTRUE;
+    } 
+    if ( (runNum > 139980) && (runNum <= 143962) ) {
+      if ( (triggerBits & kHLT_Ele10_SW_L1R) ) pass = kTRUE;
+    } 
+    if ( (runNum > 143962) ) {
+      if ( (triggerBits & kHLT_Ele10_SW_L1R) ) pass = kTRUE;
+    } 
+  } else if (SelectionType >= 100 && SelectionType < 200) {
+    if (SelectionType == 101) {
+      if ( (triggerBits & kHLT_Jet15U) ) pass = kTRUE;
+    } else if (SelectionType == 102) {
+      if ( (triggerBits & kHLT_Jet30U) ) pass = kTRUE;
+    }else if (SelectionType == 103) {
+      if ( (triggerBits & kHLT_Jet50U) ) pass = kTRUE;
+    }else if (SelectionType == 104) {
+      if ( (triggerBits & kHLT_Jet70U) ) pass = kTRUE;
+    }else if (SelectionType == 105) {
+      if ( (triggerBits & kHLT_Jet100U) ) pass = kTRUE;
+    }
+
+  } else if (SelectionType >= 200 && SelectionType < 300) {
+    if (SelectionType == 201) {
+      if ( (triggerBits & kHLT_Photon20_L1R) ) pass = kTRUE;
+    } else if (SelectionType == 202) {
+      if ( (triggerBits & kHLT_Photon30_L1R) ) pass = kTRUE;
+    }else if (SelectionType == 202) {
+      if ( (triggerBits & kHLT_Photon40_L1R) ) pass = kTRUE;
+    }else if (SelectionType == 202) {
+      if ( (triggerBits & kHLT_Photon50_L1R) ) pass = kTRUE;
+    }
+
+  } else {
+    cout << "Selection Type " << SelectionType << " not recognized\n";
+  }
+
+  return pass;
+
+}
+
+
+
+Bool_t passElectronNumeratorCuts(const mithep::TElectron *ele, Int_t ElectronSelectionType) {
+  
+  Bool_t pass = kTRUE;
+
+  //ECAL driven only
+  if (!ele->isEcalDriven) {
+    pass = kFALSE;
+  }
+
+  if (ElectronSelectionType == 0) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+//             && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+//              && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+  if (ElectronSelectionType == 1) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+  if (ElectronSelectionType == 2) {
+
+    Double_t relIsoCut = 0.1;
+    if (ele->pt >= 10 && ele->pt < 15) relIsoCut = 0.05;
+    if (ele->pt >= 15 && ele->pt < 20) relIsoCut = 0.07;
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < relIsoCut
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < relIsoCut
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+  //TighterIso2 + VBTF70
+  if (ElectronSelectionType == 21) {
+
+    Double_t relIsoCut = 0.1;
+    if (ele->pt >= 10 && ele->pt < 15) relIsoCut = 0.05;
+    if (ele->pt >= 15 && ele->pt < 20) relIsoCut = 0.07;
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.03
+              && ele->HoverE < 0.025
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < relIsoCut
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.005
+               && fabs(ele->deltaPhiIn) < 0.02
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < relIsoCut
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+  //TighterIso2 + VBTF60
+  if (ElectronSelectionType == 22) {
+
+    Double_t relIsoCut = 0.1;
+    if (ele->pt >= 10 && ele->pt < 15) relIsoCut = 0.05;
+    if (ele->pt >= 15 && ele->pt < 20) relIsoCut = 0.07;
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.025
+              && ele->HoverE < 0.025
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < relIsoCut
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.005
+               && fabs(ele->deltaPhiIn) < 0.02
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < relIsoCut
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+
+  if (ElectronSelectionType == 3) {
+
+    Double_t relIsoCut = 0.1;
+    if (ele->pt >= 10 && ele->pt < 15) relIsoCut = 0.02;
+    if (ele->pt >= 15 && ele->pt < 20) relIsoCut = 0.03;
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < relIsoCut
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < relIsoCut
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+  if (ElectronSelectionType == 4) {
+
+    Double_t relIsoCut = 0.1;
+    if (ele->pt >= 10 && ele->pt < 15) relIsoCut = 0.01;
+    if (ele->pt >= 15 && ele->pt < 20) relIsoCut = 0.03;
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < relIsoCut
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < relIsoCut
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+
+  //WW +  ConvVeto WrongHits0
+  if (ElectronSelectionType == 100) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+//               && ele->isConv == kTRUE
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+//                && ele->isConv == kTRUE
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+
+  //WW +  ConvVeto WrongHits1
+  if (ElectronSelectionType == 101) {
+
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+//               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+              && ele->isConvOneWrongHit == kTRUE
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+//                && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+               && ele->isConvOneWrongHit == kTRUE
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+  }
+
+
+
+  //WW + Guiseppe 1a : fbrem/eta
+  if (ElectronSelectionType == 201) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+
+    if (ele->fBrem < 0.15) {
+      if (fabs(ele->eta) > 1.0) pass = kFALSE;
+    }
+  }
+
+ //WW + Guiseppe 1b : fbrem/eta
+  if (ElectronSelectionType == 202) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+
+    if (ele->fBrem < 0.15) {
+      if (fabs(ele->eta) > 1.0) {
+        pass = kFALSE;
+      } else {
+        if (!( ele->EOverP > 0.95 && fabs(ele->deltaPhiIn*ele->q) < 0.006 )) pass = kFALSE;
+      }
+    }
+  }
+
+
+
+ //WW + CicTight
+  if (ElectronSelectionType == 301) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+
+    if (ele->passTightId != 15) {
+        pass = kFALSE;      
+    }
+  }
+
+ //WW + CicTight
+  if (ElectronSelectionType == 302) {
+    //Barrel 
+    if (fabs(ele->eta) < 1.5) {
+      if (! ( (0==0)
+              && ele->sigiEtaiEta < 0.01 
+              && fabs(ele->deltaEtaIn) < 0.004
+              && fabs(ele->deltaPhiIn) < 0.06
+              && ele->HoverE < 0.04
+              && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+              && ele->nExpHitsInner <= 0
+              && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+              && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }      
+    }
+    //Endcap
+    else if (fabs(ele->eta) > 1.5) {
+      if (! (  (0==0)
+               && ele->sigiEtaiEta < 0.03
+               && fabs(ele->deltaEtaIn) < 0.007
+               && fabs(ele->deltaPhiIn) < 0.03
+               && ele->HoverE < 0.025
+               && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+               && ele->nExpHitsInner <= 0
+               && !(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)
+               && fabs(ele->d0) < 0.02
+            )
+        ) {
+        pass = kFALSE;
+      }
+    } else {
+      pass = kFALSE;
+      return pass;
+    }
+
+    if (ele->passCustomTightId == kFALSE) {
+        pass = kFALSE;      
+    }
+  }
+
+
+  return pass;
+}
+
+Bool_t passElectronNMinusOneCuts (const mithep::TElectron *ele, Int_t varIndex) {
+  
+  Bool_t result = kTRUE;
+
+  if (!(fabs(ele->partnerDist) < 0.02 && fabs(ele->partnerDeltaCot) < 0.02)) result = kFALSE;
+
+  if (varIndex != 5 && !(ele->nExpHitsInner <= 0 )) result = kFALSE;
+  if (varIndex != 6 && !(fabs(ele->d0) < 0.02 )) result = kFALSE;
+
+  if (TMath::Abs(ele->eta) < 1.479) {
+    if (varIndex != 0 && !( ele->sigiEtaiEta < 0.01)) result = kFALSE;
+    if (varIndex != 1 && !( fabs(ele->deltaEtaIn) < 0.004 )) result = kFALSE;
+    if (varIndex != 2 && !( fabs(ele->deltaPhiIn) < 0.06 )) result = kFALSE;
+    if (varIndex != 3 && !( ele->HoverE < 0.04)) result = kFALSE;
+    if (varIndex != 4 && !((ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1)) result = kFALSE;
+  } else {
+    if (varIndex != 0 && !( ele->sigiEtaiEta < 0.03)) result = kFALSE;
+    if (varIndex != 1 && !( fabs(ele->deltaEtaIn) < 0.007 )) result = kFALSE;
+    if (varIndex != 2 && !( fabs(ele->deltaPhiIn) < 0.03 )) result = kFALSE;
+    if (varIndex != 3 && !( ele->HoverE < 0.025)) result = kFALSE;
+    if (varIndex != 4 && !((ele->trkIso03 + ele->emIso03  + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1)) result = kFALSE;
+  }
+
+  return result;
+}
+ 
+
+Bool_t passElectronDenominatorCuts(const mithep::TElectron *ele, Int_t SelectionType) {
+  
+  Bool_t pass = kTRUE;
+
+  //ECAL driven only
+  if (!ele->isEcalDriven) {
+    pass = kFALSE;
+  }
+
+  //Barrel 
+  if (fabs(ele->eta) < 1.5) {
+    if (! ( (0==0)
+//             && ele->HoverE < 0.15    
+//             && ele->sigiEtaiEta < 0.014     
+            && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+//             && (ele->trkIso03 + TMath::Max(ele->emIso03 - 1.0, 0.0) + ele->hadIso03) / ele->pt < 0.1
+          )
+      ) {
+      pass = kFALSE;
+    }      
+  }
+  //Endcap
+  else if (fabs(ele->eta) > 1.5) {
+    if (! (  (0==0)
+//              && ele->HoverE < 0.15    
+//              && ele->sigiEtaiEta < 0.035   
+              && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / TMath::Max(ele->pt,Float_t(20)) < 0.1
+//              && (ele->trkIso03 + ele->emIso03  + ele->hadIso03) / ele->pt < 0.1
+
+     )
+      ) {
+      pass = kFALSE;
+    }
+  } else {
+    pass = kFALSE;
+    return pass;
+  }
+
+
+  return pass;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+void eventDump(ofstream &ofs, const Int_t runNum, const Int_t lumiSec, const Int_t evtNum, Double_t mass,
+               Double_t pt1, Double_t eta1, Double_t phi1, Int_t leptonCharge1, Double_t pt2, Double_t eta2, Double_t phi2, Int_t leptonCharge2)
+{
+  ofs <<   runNum << " " ;
+  ofs <<  lumiSec << " ";
+  ofs << evtNum<< " ";
+  ofs << mass<< " ";
+
+//   ofs << "----------+-----------+-----------+----------+------------+-----+-----+------+------+-----------+----+------" << endl;
+//   ofs << "    pt    |    eta    |    phi    |   iso    |    d0      | ntk | npx | nseg | nval | chi^2/ndf | TM | HLT" << endl;
+//   ofs << "----------+-----------+-----------+----------+------------+-----+-----+------+------+-----------+----+------" << endl;
+  ofs << " " ;
+  ofs << setw(9) << pt1 << " |";
+  ofs << setw(10) << eta1 << " |";
+  ofs << setw(10) << phi1 << " |";
+  ofs << setw(10) << leptonCharge1 << " |";
+  ofs << setw(9) << pt2 << " |";
+  ofs << setw(10) << eta2 << " |";
+  ofs << setw(10) << phi2 << " |";
+  ofs << setw(10) << leptonCharge2 << " |";
+  ofs << endl;
+  
+}

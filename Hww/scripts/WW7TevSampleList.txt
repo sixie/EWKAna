@@ -1,0 +1,145 @@
+#
+#Data             
+#
+#r10a-eg-s17                    noskim
+#r10b-el-pr-v2                  noskim
+#r10a-mu-s17                    noskim
+#r10b-mu-pr-v2                  noskim
+#
+#
+#Spring11 MC
+#s11-zeem20-v11-pu               noskim
+#s11-zmmm20-v11-pu               noskim
+#
+#
+#
+#
+#Spring11 MC
+#
+#p11-ww2l-v1g1-pu                noskim
+#p11-ggww-v1g1-pu                noskim
+#p11-wz-v1g1-pu                  noskim
+#p11-zz-v1g1-pu                  noskim
+#p11-ttj-v1g1-pu                 noskim
+#p11-ttj-powheg-v1g1-pu          noskim
+#p11-stop-v1g1-pu                noskim
+#p11-ttop-v1g1-pu                noskim
+#p11-wtop-v1g1-pu                noskim
+#p11-zeem20-v1g1-pu              noskim
+#p11-zmmm20-v1g1-pu               noskim
+#p11-zttm20-v1g1-pu              noskim
+#p11-zee1020-v1g1-pu             noskim
+#p11-zmm1020-v1g1-pu             noskim
+#p11-ztt1020-v1g1-pu             noskim
+#p11-qcd15_3000-v1g1-pu-skimmed    RecoLeptonPlusJetSkim
+#p11-qcd15_30-v1g1-pu-skimmed     RecoLeptonPlusJetSkim
+#p11-qcd30_50-v1g1-pu-skimmed     RecoLeptonPlusJetSkim
+#p11-wjetsl-v1g1-pu-skimmed       TightPlusRecoNoTriggerSkim
+w10-wjets-z2-v8-pu11-2l          noskim
+#
+#
+# p11-h115ww2l-gf-v1g1-pu         noskim
+# p11-h120ww2l-gf-v1g1-pu         noskim
+# p11-h130ww2l-gf-v1g1-pu         noskim
+# p11-h140ww2l-gf-v1g1-pu         noskim
+# p11-h150ww2l-gf-v1g1-pu         noskim
+# p11-h160ww2l-gf-v1g1-pu         noskim
+# p11-h170ww2l-gf-v1g1-pu         noskim
+# p11-h180ww2l-gf-v1g1-pu         noskim
+# p11-h190ww2l-gf-v1g1-pu         noskim
+# p11-h200ww2l-gf-v1g1-pu         noskim
+# p11-h210ww2l-gf-v1g1-pu         noskim
+# p11-h220ww2l-gf-v1g1-pu         noskim
+# p11-h230ww2l-gf-v1g1-pu         noskim
+# p11-h250ww2l-gf-v1g1-pu         noskim
+# p11-h300ww2l-gf-v1g1-pu         noskim
+# p11-h350ww2l-gf-v1g1-pu         noskim
+# p11-h400ww2l-gf-v1g1-pu         noskim
+# p11-h450ww2l-gf-v1g1-pu         noskim
+# p11-h500ww2l-gf-v1g1-pu         noskim
+# p11-h550ww2l-gf-v1g1-pu         noskim
+# p11-h600ww2l-gf-v1g1-pu         noskim
+#
+#p11-h115wwlt-gf-v1g1-pu         noskim
+#p11-h115ww2t-gf-v1g1-pu         noskim
+#p11-h120wwlt-gf-v1g1-pu         noskim
+#p11-h120ww2t-gf-v1g1-pu         noskim
+#p11-h130wwlt-gf-v1g1-pu         noskim
+#p11-h130ww2t-gf-v1g1-pu         noskim
+#p11-h160wwlt-gf-v1g1-pu         noskim
+#p11-h160ww2t-gf-v1g1-pu         noskim
+#p11-h200wwlt-gf-v1g1-pu         noskim
+#p11-h200ww2t-gf-v1g1-pu         noskim
+#p11-h130ww2l-vbf-v1g1-pu        noskim
+#p11-h130ww2t-vbf-v1g1-pu        noskim
+#p11-h160ww2l-vbf-v1g1-pu        noskim
+#p11-h160ww2t-vbf-v1g1-pu        noskim
+#p11-h200ww2l-vbf-v1g1-pu        noskim
+#p11-h200ww2t-vbf-v1g1-pu        noskim
+##
+#SEVERE PU MC
+#
+#w10-vv-mg-v8-pu11               noskim
+#w10-ggww-z2-v8-pu11             noskim
+#w10-wz-z2-v8-pu11               noskim
+#w10-zz-z2-v8-pu11               noskim
+#w10-tt-mg-z2-v8-pu11            noskim
+#w10-stop-mg-z2-v8-pu11          noskim
+#w10-ttop-mg-z2-v8-pu11          noskim
+#w10-wtop-mg-z2-v8-pu11          noskim
+#w10-zee-powheg-c10-v8-pu11      noskim
+#w10-zmm-powheg-c10-v8-pu11      noskim
+#w10-ztt-powheg-c10-v8-pu11      noskim
+#w10-zee1020-powheg-c10-v8-pu11  noskim
+#w10-zmm1020-powheg-c10-v8-pu11  noskim
+#w10-ztt1020-powheg-c10-v8-pu11  noskim
+#w10-wjetsl-z2-v8-pu11-skimmed  TwoRecoLeptonSkim
+#w10-vg-mg-z2-v8-pu11            noskim
+#p10-w0jets-0-100-v26           noskim
+#p10-w1jets-0-100-v26           noskim
+#p10-w2jets-0-100-v26           noskim
+#p10-w3jets-0-100-v26           noskim
+#p10-w4jets-0-100-v26           noskim
+#p10-w5jets-0-100-v26           noskim
+#p10-wbb0jets-v26               noskim
+#p10-wc0jets-v26                noskim
+#p10-wcc0jets-v26               noskim
+#p10-wjets-mg-v26               noskim
+#w10-h160ww2l-gf-z2-v8-pu11      noskim
+#w10-h160wwlt-gf-z2-v8-pu11      noskim
+#w10-h160wwtt-gf-z2-v8-pu11      noskim
+#w10-h130ww2l-gf-z2-v8-pu11      noskim
+#w10-h130wwlt-gf-z2-v8-pu11      noskim
+#w10-h130wwtt-gf-z2-v8-pu11      noskim
+#
+#2010 PU MC
+#
+#w10-vv-mg-z2-v8-pu               noskim
+#10-wjetsl-z2-v8-skimmed       TwoRecoLeptonSkim
+#w10-wjetsl-z2-v8-pu-skimmed   TwoRecoLeptonSkim
+#w10-zee-powheg-c10-v8-pu      noskim
+#w10-zmm-powheg-c10-v8-pu      noskim
+#w10-h160ww2l-gf-z2-v8-pu      noskim
+#w10-h160wwlt-gf-z2-v8-pu      noskim
+#w10-h160wwtt-gf-z2-v8-pu      noskim
+#w10-h130wwl2-gf-v8-pu      noskim
+#w10-h130wwlt-gf-v8-pu      noskim
+#w10-h130wwtt-gf-v8-pu      noskim
+#
+#Fall 10 MC
+#
+#f10-h160ww2l-gf-z2-v12-pu      noskim
+#f10-h160wwlt-gf-z2-v12-pu      noskim
+#f10-h160wwtt-gf-z2-v12-pu      noskim
+#f10-h130ww2l-gf-z2-v12-pu      noskim
+#f10-h130wwlt-gf-z2-v12-pu      noskim
+#f10-h130wwtt-gf-z2-v12-pu      noskim
+#f10-h160ww2l-gf-z2-v12      noskim
+#f10-h160wwlt-gf-z2-v12      noskim
+#f10-h160wwtt-gf-z2-v12      noskim
+#f10-h130ww2l-gf-z2-v12      noskim
+#f10-h130wwlt-gf-z2-v12      noskim
+#f10-h130wwtt-gf-z2-v12      noskim
+#f10-wjets-mg-z2-v12-pu-skimmed  TwoRecoLeptonSkim
+#
+#

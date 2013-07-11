@@ -1,0 +1,19 @@
+#
+#s11-zjetsm50-mg-v11-pu          noskim
+#s11-zeem20-powheg-v11-pu         noskim
+#s11-zmmm20-powheg-v11-pu         noskim
+#s11-zttm20-powheg-v11-pu         noskim
+#
+s11-ttj-v11-pu                     noskim
+s11-wwj-v11-pu                     noskim
+s11-wz-v11-pu                      noskim
+#s11-zz-v11-pu                     noskim
+# s11-ww2l-v11-pu                   noskim
+# s11-wz3l-v11-pu                   noskim
+# s11-zz2l-v11-pu                   noskim
+# s11-stop-powheg-v11-pu             noskim
+# s11-ttop-powheg-v11-pu             noskim
+# s11-wtop-powheg-v11-pu             noskim
+# s11-ggww2l-v11-pu                  noskim
+# s11-zz2e2m-powheg-v11-pu           noskim
+# s11-ggzz2l-v11-pu                  noskim
